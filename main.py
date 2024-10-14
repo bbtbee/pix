@@ -1,16 +1,76 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+import os
+from msilib.schema import RadioButton
+from tkinter import Tk, Label, Button, filedialog, messagebox, StringVar, OptionMenu
+from PIL import Image
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+class ImageConverter:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Image Converter")
+        self.root.geometry("400x200")
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+        self.input_path = None
+        self.output_path = None
+
+        # Input Image Label
+        self.input_label = Label(root, text="Input Image: ")
+        self.input_label.pack(pady=5)
+
+        # Output Format Dropdown
+        self.output_format = StringVar(root)
+        self.output_format.set("JPEG")  # Default value
+        self.format_label = Label(root, text="Select Output Format: ")
+        self.format_label.pack(pady=5)
+
+        formats = ["JPEG", "PNG", "BMP", "GIF", "TIFF"]
+        self.format_menu = OptionMenu(root, self.output_format, *formats)
+        self.format_menu.pack(pady=5)
+
+        self.select_input_button = Button(root, text="Select Input Image", command=self.select_input_image)
+        self.select_input_button.pack(pady=5)
+
+        self.convert_button = Button(root, text="Convert Image", command=self.convert_image)
+        self.convert_button.pack(pady=5)
+
+    def select_input_image(self):
+        self.input_path = filedialog.askopenfilename(title="Select Image", filetypes=[
+            ("Image Files", "*.png *.jpg *.jpeg *.bmp *.tiff *.gif")])
+        if self.input_path:
+            self.input_label.config(text=f"Selected: {os.path.basename(self.input_path)}")
+
+    def convert_image(self):
+        if not self.input_path:
+            messagebox.showerror("Error", "Please select an input image.")
+            return
+
+        self.output_path = filedialog.asksaveasfilename(defaultextension=f".{self.output_format.get().lower()}",
+                                                        filetypes=[(f"{self.output_format.get()} files",
+                                                                    f"*.{self.output_format.get().lower()}")])
+        if not self.output_path:
+            return
+
+        try:
+            image = Image.open(self.input_path)
+
+            # Check if the output format supports transparency and handle conversion
+            if self.output_format.get() in ["JPEG", "BMP"]:
+                if image.mode == 'RGBA':
+                    # Create a white background and blend the RGBA image with it
+                    background = Image.new("RGB", image.size, (255, 255, 255))
+                    image = Image.alpha_composite(background, image)
+                elif image.mode != 'RGB':
+                    # Convert non-RGBA images to RGB directly
+                    image = image.convert('RGB')
+
+            # Convert and save the image
+            image.save(self.output_path, format=self.output_format.get())
+            messagebox.showinfo("Success", f"Image converted to {self.output_format.get()} successfully!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to convert image: {e}")
+
+
+if __name__ == "__main__":
+    root = Tk()
+    app = ImageConverter(root)
+    root.mainloop()
