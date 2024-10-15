@@ -1,5 +1,8 @@
 import os
+import ctypes
+import sys
 from tkinter import Tk, Label, Button, filedialog, messagebox, StringVar, OptionMenu
+from tkinter import font as tkFont
 from PIL import Image
 
 
@@ -7,14 +10,22 @@ class ImageConverter:
     def __init__(self, root):
         self.root = root
         self.root.title("Image Converter")
-        self.root.geometry("400x200")
+        if sys.platform == "win32":
+            try:
+                ctypes.windll.shcore.SetProcessDpiAwareness(1)  # Enable DPI awareness
+            except Exception as e:
+                print(f"Could not set DPI awareness on Windows: {e}")
+        self.root.geometry("500x300")
+        self.root.resizable(True, True)
+
+        default_font = tkFont.nametofont("TkDefaultFont")
+        default_font.configure(size=13)
+
+        optionmenu_font = tkFont.Font(size=13)
 
         self.input_path = None
         self.output_path = None
 
-        # Input Image Label
-        self.input_label = Label(root, text="Input Image: ")
-        self.input_label.pack(pady=5)
 
         # Output Format Dropdown
         self.output_format = StringVar(root)
@@ -24,7 +35,15 @@ class ImageConverter:
 
         formats = ["JPEG", "PNG", "BMP", "GIF", "TIFF"]
         self.format_menu = OptionMenu(root, self.output_format, *formats)
+        self.format_menu.config(font=optionmenu_font)
         self.format_menu.pack(pady=5)
+
+        menu = self.root.nametowidget(self.format_menu.menuname)
+        menu.config(font=optionmenu_font)
+
+        # Input Image Label
+        self.input_label = Label(root, text="Input Image: ")
+        self.input_label.pack(pady=5)
 
         self.select_input_button = Button(root, text="Select Input Image", command=self.select_input_image)
         self.select_input_button.pack(pady=5)
