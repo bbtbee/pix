@@ -1,5 +1,4 @@
 import os
-from msilib.schema import RadioButton
 from tkinter import Tk, Label, Button, filedialog, messagebox, StringVar, OptionMenu
 from PIL import Image
 
@@ -44,9 +43,24 @@ class ImageConverter:
             messagebox.showerror("Error", "Please select an input image.")
             return
 
-        self.output_path = filedialog.asksaveasfilename(defaultextension=f".{self.output_format.get().lower()}",
-                                                        filetypes=[(f"{self.output_format.get()} files",
-                                                                    f"*.{self.output_format.get().lower()}")])
+        # Determine output file name based on input file name
+        input_file_name = os.path.basename(self.input_path)
+        base_name, ext = os.path.splitext(input_file_name)
+        output_file_name = f"{base_name}.{self.output_format.get().lower()}"
+
+        # Check if output file already exists, append incremental number if exists
+        output_dir = os.path.dirname(self.input_path)
+        output_path = os.path.join(output_dir, output_file_name)
+        counter = 1
+        while os.path.exists(output_path):
+            output_file_name = f"{base_name} ({counter}).{self.output_format.get().lower()}"
+            output_path = os.path.join(output_dir, output_file_name)
+            counter += 1
+
+        self.output_path = filedialog.asksaveasfilename(initialfile=output_file_name,
+                                                       defaultextension=f".{self.output_format.get().lower()}",
+                                                       filetypes=[(f"{self.output_format.get()} files",
+                                                                   f"*.{self.output_format.get().lower()}")])
         if not self.output_path:
             return
 
