@@ -33,7 +33,7 @@ class ImageConverter:
         self.format_label = Label(root, text="Select Output Format: ")
         self.format_label.pack(pady=5)
 
-        formats = ["JPEG", "PNG", "BMP", "GIF", "TIFF"]
+        formats = ["JPEG", "PNG", "BMP", "GIF", "TIFF", "WEBP"]
         self.format_menu = OptionMenu(root, self.output_format, *formats)
         self.format_menu.config(font=optionmenu_font)
         self.format_menu.pack(pady=5)
@@ -53,7 +53,7 @@ class ImageConverter:
 
     def select_input_image(self):
         self.input_path = filedialog.askopenfilename(title="Select Image", filetypes=[
-            ("Image Files", "*.png *.jpg *.jpeg *.bmp *.tiff *.gif")])
+            ("Image Files", "*.png *.jpg *.jpeg *.bmp *.tiff *.gif *.webp")])
         if self.input_path:
             self.input_label.config(text=f"Selected: {os.path.basename(self.input_path)}")
 
@@ -62,12 +62,10 @@ class ImageConverter:
             messagebox.showerror("Error", "Please select an input image.")
             return
 
-        # Determine output file name based on input file name
         input_file_name = os.path.basename(self.input_path)
         base_name, ext = os.path.splitext(input_file_name)
         output_file_name = f"{base_name}.{self.output_format.get().lower()}"
 
-        # Check if output file already exists, append incremental number if exists
         output_dir = os.path.dirname(self.input_path)
         output_path = os.path.join(output_dir, output_file_name)
         counter = 1
@@ -76,10 +74,12 @@ class ImageConverter:
             output_path = os.path.join(output_dir, output_file_name)
             counter += 1
 
-        self.output_path = filedialog.asksaveasfilename(initialfile=output_file_name,
-                                                       defaultextension=f".{self.output_format.get().lower()}",
-                                                       filetypes=[(f"{self.output_format.get()} files",
-                                                                   f"*.{self.output_format.get().lower()}")])
+        self.output_path = filedialog.asksaveasfilename(
+            initialfile=output_file_name,
+            defaultextension=f".{self.output_format.get().lower()}",
+            filetypes=[(f"{self.output_format.get()} files",
+                        f"*.{self.output_format.get().lower()}")]
+        )
         if not self.output_path:
             return
 
@@ -87,16 +87,15 @@ class ImageConverter:
             image = Image.open(self.input_path)
 
             # Check if the output format supports transparency and handle conversion
-            if self.output_format.get() in ["JPEG", "BMP"]:
+            if self.output_format.get() in ["JPEG", "BMP", "WEBP"]:
                 if image.mode == 'RGBA':
                     # Create a white background and blend the RGBA image with it
-                    background = Image.new("RGB", image.size, (255, 255, 255))
-                    image = Image.alpha_composite(background, image)
+                    background = Image.new("RGBA", image.size, (255, 255, 255, 1))
+                    image = Image.alpha_composite(background, image).convert("RGB")
                 elif image.mode != 'RGB':
                     # Convert non-RGBA images to RGB directly
                     image = image.convert('RGB')
 
-            # Convert and save the image
             image.save(self.output_path, format=self.output_format.get())
             messagebox.showinfo("Success", f"Image converted to {self.output_format.get()} successfully!")
         except Exception as e:
